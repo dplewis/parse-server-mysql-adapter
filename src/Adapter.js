@@ -1,4 +1,5 @@
 import Parse from 'parse/node';
+import log from 'npmlog';
 import {
   toParseSchema,
   toMySQLSchema,
@@ -11,6 +12,11 @@ import {
   formatDateToMySQL,
 } from './Transform';
 
+/* istanbul ignore if */
+if (process.env.VERBOSE || process.env.VERBOSE_PARSE_SERVER_MYSQL_ADAPTER) {
+  log.level = 'verbose';
+}
+
 const parser = require('./Parser');
 const mysql = require('mysql2/promise');
 
@@ -22,13 +28,20 @@ const MySQLWrongValueError = 'ER_TRUNCATED_WRONG_VALUE';
 const MySQLUniqueIndexViolationError = 'ER_DUP_KEYNAME';
 const MySQLBlobKeyWithoutLengthError = 'ER_BLOB_KEY_WITHOUT_LENGTH';
 const defaultUniqueKeyLength = 'varchar(120)';
+const LOG_PREFIX = 'parse-server-mysql-adapter';
+
+let isInitialized = false;
 
 const debug = (name, args) => {
-  console.log(name);
+  if (isInitialized) {
+    return;
+  }
+  log.verbose(LOG_PREFIX, name);
   if (args) {
-    console.log(args);
+    log.verbose(LOG_PREFIX, args);
   }
 };
+
 
 export default class Adapter {
   // Private
@@ -77,10 +90,9 @@ export default class Adapter {
         }
         throw new Parse.Error(`Index $${idx} exceeds values length: $${values.length}`);
       });
-      console.log(sql);
+      debug(sql);
       return sql;
     };
-    console.log(dbOptions);
     this._databaseOptions = dbOptions;
   }
 
@@ -216,8 +228,6 @@ export default class Adapter {
       .then(() => Promise.all(relations.map(fieldName => this.database.query('CREATE TABLE IF NOT EXISTS `$1:name` (`relatedId` varChar(120), `owningId` varChar(120), PRIMARY KEY(`relatedId`, `owningId`))', [`_Join:${fieldName}:${className}`]))))
       .catch((error) => {
         console.log('error here');
-        console.log(qs);
-        console.log(values);
         console.log(error);
       });
   }
@@ -871,8 +881,6 @@ export default class Adapter {
     const constraintPatterns = fieldNames.map((fieldName, index) => `\`$${index + 3}:name\``);
     const qs = `ALTER TABLE \`$1:name\` ADD CONSTRAINT \`$2:name\` UNIQUE (${constraintPatterns.join(',')})`;
     debug('ensureUniqueness', qs, [className, constraintName, ...fieldNames]);
-    console.log(qs);
-    console.log([className, constraintName, ...fieldNames]);
     return this.connect()
       .then(() => this.database.query(qs, [className, constraintName, ...fieldNames]))
       .then(([res]) => res)
@@ -912,6 +920,7 @@ export default class Adapter {
 
   performInitialization({ VolatileClassesSchemas }) {
     debug('performInitialization');
+    isInitialized = true;
     const promises = VolatileClassesSchemas.map(schema => this.connect()
         .then(() => this.createTable(schema.className, schema))
         .catch((err) => {
@@ -922,6 +931,7 @@ export default class Adapter {
         }));
     return Promise.all(promises)
       .then(() => {
+        isInitialized = false;
         debug('initializationDone');
       })
       .catch((error) => {

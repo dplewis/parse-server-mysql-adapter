@@ -1,6 +1,7 @@
-[![Build Status](https://travis-ci.org/dplewis/parse-server-mysql-adapter.svg?branch=master)](https://travis-ci.org/dplewis/parse-server-mysql-adapter) [![npm version](https://badge.fury.io/js/parse-server-mysql-adapter.svg)](https://badge.fury.io/js/parse-server-mysql-adapter)
 # MySQL Parse Server Adapter
-
+[![Build Status](https://travis-ci.org/dplewis/parse-server-mysql-adapter.svg?branch=master)](https://travis-ci.org/dplewis/parse-server-mysql-adapter)
+[![codecov.io](https://codecov.io/gh/dplewis/parse-server-mysql-adapter/coverage.svg?branch=master)](https://codecov.io/gh/dplewis/parse-server-mysql-adapter?branch=master)
+[![npm version](https://badge.fury.io/js/parse-server-mysql-adapter.svg)](https://badge.fury.io/js/parse-server-mysql-adapter)
 [![Greenkeeper badge](https://badges.greenkeeper.io/dplewis/parse-server-mysql-adapter.svg)](https://greenkeeper.io/)
 
 This is database adapter to add support of MySQL to Parse Server
@@ -39,7 +40,7 @@ You can find a list of available options [here](https://github.com/mysqljs/mysql
 
 Just like other databases MySQL has also some limits that are documented [here](https://dev.mysql.com/doc/refman/5.7/en/limits.html):
 
-# Compatibility with Parse Server
+## Compatibility with Parse Server
 
 Please remember MySQL has recently added a JSON Type in version 5.7. This adapter tried its best to simulate how Parse Server works with other Databases like Postgres, however these features or functions won't work as you expect. Features including JSON and Array will be improved in future updates.
 
@@ -47,3 +48,15 @@ Please remember MySQL has recently added a JSON Type in version 5.7. This adapte
 - **Regex** : Limited support for regex.
 
 ---
+
+## Logging
+
+You can enable verbose logging with environment variables:
+
+```
+VERBOSE=1
+
+or
+
+VERBOSE_PARSE_SERVER_MYSQL_ADAPTER=1
+```

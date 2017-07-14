@@ -6,8 +6,6 @@ export default class MySQL {
   _options: Object;
 
   constructor(uri, options) {
-    console.log(uri);
-    console.log(options);
     this._uri = uri;
     this._options = options || {};
   }
