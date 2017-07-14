@@ -1,0 +1,16 @@
+node_modules/
+*.log
+*.tgz
+logs/
+src/
+spec/
+resources/
+vendors/
+gulpfile.js
+tsconfig.json
+tslint.json
+typings.json
+typings
+build/spec
+*.yml
+*.yaml

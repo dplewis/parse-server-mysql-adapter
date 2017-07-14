@@ -1,0 +1,29 @@
+language: node_js
+dist: trusty
+node_js:
+- '6.10'
+- '7.10'
+branches:
+  only:
+  - master
+  - /^[0-9]+.[0-9]+.[0-9]+(-.*)?$/
+  - /^greenkeeper/.*$/
+cache:
+  directories:
+  - node_modules
+  - resources
+# Test stage
+stage: test
+env:
+  global:
+  - COVERAGE_OPTION='./node_modules/.bin/nyc'
+before_install:
+-  chmod +x ./resources/*
+- ./resources/travis_mysql_5.7.sh
+- ./resources/mysql-reset-root-password.sh
+- mysql -e 'CREATE DATABASE parse_server_mysql_adapter_test_database;'
+before_script:
+- node -e 'require("./lib/index.js")'
+after_success: "./node_modules/.bin/codecov"
+after_script:
+- bash <(curl -s https://codecov.io/bash)
