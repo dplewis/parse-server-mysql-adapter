@@ -7,7 +7,9 @@
     "lint": "eslint --cache ./",
     "lint:fix": "eslint --fix ./",
     "build": "babel src/ -d lib/ --copy-files",
-    "test": "nyc jasmine"
+    "test": "TESTING=1 nyc jasmine",
+    "pretest": "npm run lint",
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",

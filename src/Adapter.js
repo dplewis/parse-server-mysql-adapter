@@ -215,7 +215,7 @@ export default class Adapter {
       .then(() => this.database.query(qs, values))
       .then(() => Promise.all(relations.map(fieldName => this.database.query('CREATE TABLE IF NOT EXISTS `$1:name` (`relatedId` varChar(120), `owningId` varChar(120), PRIMARY KEY(`relatedId`, `owningId`))', [`_Join:${fieldName}:${className}`]))))
       .catch((error) => {
-        console.log("error here");
+        console.log('error here');
         console.log(qs);
         console.log(values);
         console.log(error);
@@ -334,7 +334,7 @@ export default class Adapter {
   // schemas cannot be retrieved, returns a promise that rejects. Requirements for the
   // rejection reason are TBD.
   getAllClasses() {
-    //debug('getAllClasses');
+    // debug('getAllClasses');
     return this._ensureSchemaCollectionExists()
       .then(() => this.database.query('SELECT * FROM `_SCHEMA`'))
       .then(([rows]) => rows.map(row => toParseSchema({ className: row.className, ...row.schema })));
