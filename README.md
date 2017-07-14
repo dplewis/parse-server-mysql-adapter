@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/dplewis/parse-server-mysql-adapter.svg?branch=master)](https://travis-ci.org/dplewis/parse-server-mysql-adapter) [![npm version](https://badge.fury.io/js/parse-server-mysql-adapter.svg)](https://badge.fury.io/js/parse-server-mysql-adapter)
 # MySQL Parse Server Adapter
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/dplewis/parse-server-mysql-adapter.svg)](https://greenkeeper.io/)
+
 This is database adapter to add support of MySQL to Parse Server
 
 ## Setup
