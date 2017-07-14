@@ -13,6 +13,7 @@ cache:
   - node_modules
   - resources
 # Test stage
+sudo: required
 stage: test
 env:
   global:
