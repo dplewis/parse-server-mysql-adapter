@@ -8,6 +8,7 @@ This is database adapter to add support of MySQL to Parse Server
 
 ## Setup
 
+This only runs on Parse-Server 2.5.0
 This only runs on MySQL >= 5.7.
 
 Create **one** Database using the MySQL CLI or Query Expression Editor on your MySQL instance.
