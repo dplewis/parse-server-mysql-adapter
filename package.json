@@ -51,7 +51,7 @@
     "codecov": "^2.2.0",
     "eslint": "^4.2.0",
     "eslint-config-airbnb-base": "^11.2.0",
-    "eslint-plugin-flowtype": "^2.35.0",
+    "eslint-plugin-flowtype": "^3.0.0",
     "eslint-plugin-import": "^2.7.0",
     "express": "^4.15.3",
     "jasmine": "2.6.0",
