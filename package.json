@@ -1,6 +1,6 @@
 {
   "name": "parse-server-mysql-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MySQL Adapter for Parse Server",
   "main": "lib/index.js",
   "scripts": {
