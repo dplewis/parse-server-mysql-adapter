@@ -8,8 +8,8 @@ This is database adapter to add support of MySQL to Parse Server
 
 ## Setup
 
-This only runs on Parse-Server 2.5.0
-This only runs on MySQL >= 5.7.
+Runs on Parse-Server 2.5.0+
+Runs on MySQL >= 5.7.
 
 Create **one** Database using the MySQL CLI or Query Expression Editor on your MySQL instance.
 
@@ -39,7 +39,7 @@ You can find a list of available options [here](https://github.com/mysqljs/mysql
 
 ## Limits in MySQL
 
-Just like other databases MySQL has also some limits that are documented [here](https://dev.mysql.com/doc/refman/5.7/en/limits.html):
+Just like other databases MySQL has also some limits that are documented [here](https://dev.mysql.com/doc/refman/5.7/en/limits.html)
 
 ## Compatibility with Parse Server
 
