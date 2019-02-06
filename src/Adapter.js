@@ -944,6 +944,10 @@ export default class Adapter {
     return this.connect()
       .then(() => this.database.query(`ALTER TABLE \`${className}\` ADD FULLTEXT (${field})`));
   }
+
+  updateSchemaWithIndexes() {
+    return Promise.resolve(this);
+  }
 }
 
 module.exports = Adapter;
