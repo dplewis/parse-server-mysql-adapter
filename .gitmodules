@@ -1,0 +1,3 @@
+[submodule "parse-server"]
+	path = parse-server
+	url = https://github.com/parse-community/parse-server

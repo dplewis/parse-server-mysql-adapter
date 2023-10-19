@@ -1,6 +1,8 @@
-import Parse from 'parse/node';
-import log from 'npmlog';
-import {
+const Parse = require('parse/node');
+const log = require('npmlog');
+const parser = require('./Parser');
+const mysql = require('mysql2/promise');
+const {
   toParseSchema,
   toMySQLSchema,
   parseTypeToMySQLType,
@@ -10,15 +12,12 @@ import {
   toMySQLValue,
   buildWhereClause,
   formatDateToMySQL,
-} from './Transform';
+} = require('./Transform');
 
 /* istanbul ignore if */
 if (process.env.VERBOSE || process.env.VERBOSE_PARSE_SERVER_MYSQL_ADAPTER) {
   log.level = 'verbose';
 }
-
-const parser = require('./Parser');
-const mysql = require('mysql2/promise');
 
 const MySQLRelationDoesNotExistError = 'ER_NO_SUCH_TABLE';
 const MySQLDuplicateColumnError = 'ER_DUP_FIELDNAME';
@@ -43,15 +42,7 @@ const debug = (name, args) => {
 };
 
 
-export default class Adapter {
-  // Private
-  _collectionPrefix: string;
-  _uri: string;
-  _databaseOptions: Object;
-  // Public
-  connectionPromise;
-  database;
-
+class Adapter {
   constructor({
     uri,
     collectionPrefix = '',
@@ -93,7 +84,10 @@ export default class Adapter {
       debug(sql);
       return sql;
     };
+    this.enableSchemaHooks = !!databaseOptions.enableSchemaHooks;
+    delete databaseOptions.enableSchemaHooks;
     this._databaseOptions = dbOptions;
+    this._onchange = () => {};
   }
 
   connect() {
@@ -126,6 +120,24 @@ export default class Adapter {
       return;
     }
     this.database.end();
+  }
+
+  watch(callback) {
+    this._onchange = callback;
+  }
+
+  _listenToSchema() {
+    if (!this._stream && this.enableSchemaHooks) {
+      // TODO
+    }
+    return Promise.resolve();
+  }
+
+  _notifySchemaChange() {
+    if (this._stream) {
+      // TODO
+    }
+    return Promise.resolve();
   }
 
   _ensureSchemaCollectionExists() {
@@ -412,45 +424,45 @@ export default class Adapter {
         return;
       }
       switch (schema.fields[fieldName].type) {
-      case 'Date':
-        if (object[fieldName]) {
-          if (fieldName === 'updatedAt' && !object[fieldName].iso) {
-            object[fieldName].iso = new Date();
+        case 'Date':
+          if (object[fieldName]) {
+            if (fieldName === 'updatedAt' && !object[fieldName].iso) {
+              object[fieldName].iso = new Date();
+            }
+            valuesArray.push(toMySQLValue(object[fieldName]));
+          } else {
+            valuesArray.push(null);
           }
-          valuesArray.push(toMySQLValue(object[fieldName]));
-        } else {
-          valuesArray.push(null);
-        }
-        break;
-      case 'Pointer':
-        valuesArray.push(object[fieldName].objectId);
-        break;
-      case 'Array':
-      case 'Object':
-      case 'Bytes':
-        valuesArray.push(JSON.stringify(object[fieldName]));
-        break;
-      case 'String':
-      case 'Number':
-        if (!object[fieldName]) {
-          valuesArray.push(0);
           break;
-        }
-        valuesArray.push(object[fieldName]);
-        break;
-      case 'Boolean':
-        valuesArray.push(object[fieldName]);
-        break;
-      case 'File':
-        valuesArray.push(object[fieldName].name);
-        break;
-      case 'GeoPoint':
+        case 'Pointer':
+          valuesArray.push(object[fieldName].objectId);
+          break;
+        case 'Array':
+        case 'Object':
+        case 'Bytes':
+          valuesArray.push(JSON.stringify(object[fieldName]));
+          break;
+        case 'String':
+        case 'Number':
+          if (!object[fieldName]) {
+            valuesArray.push(0);
+            break;
+          }
+          valuesArray.push(object[fieldName]);
+          break;
+        case 'Boolean':
+          valuesArray.push(object[fieldName]);
+          break;
+        case 'File':
+          valuesArray.push(object[fieldName].name);
+          break;
+        case 'GeoPoint':
         // pop the point and process later
-        geoPoints[fieldName] = object[fieldName];
-        columnsArray.pop();
-        break;
-      default:
-        throw `Type ${schema.fields[fieldName].type} not supported yet`;
+          geoPoints[fieldName] = object[fieldName];
+          columnsArray.pop();
+          break;
+        default:
+          throw `Type ${schema.fields[fieldName].type} not supported yet`;
       }
     });
 
@@ -656,7 +668,7 @@ export default class Adapter {
                     && schema.fields[fieldName].type === 'Object') {
         const keysToSet = Object.keys(originalUpdate).filter(k =>
           // choose top level fields that don't have operation or . (dot) field
-           !originalUpdate[k].__op && k.indexOf('.') === -1 && k !== 'updatedAt');
+          !originalUpdate[k].__op && k.indexOf('.') === -1 && k !== 'updatedAt');
 
         let setPattern = '';
         if (keysToSet.length > 0) {
@@ -664,7 +676,7 @@ export default class Adapter {
         }
         const keysToReplace = Object.keys(originalUpdate).filter(k =>
           // choose top level fields that dont have operation
-           !originalUpdate[k].__op && k.split('.').length === 2 && k.split('.')[0] === fieldName).map(k => k.split('.')[1]);
+          !originalUpdate[k].__op && k.split('.').length === 2 && k.split('.')[0] === fieldName).map(k => k.split('.')[1]);
 
         let replacePattern = '';
         if (keysToReplace.length > 0) {
@@ -682,7 +694,7 @@ export default class Adapter {
 
         const keysToIncrement = Object.keys(originalUpdate).filter(k =>
           // choose top level fields that have a increment operation set
-           originalUpdate[k].__op === 'Increment' && k.split('.').length === 2 && k.split('.')[0] === fieldName).map(k => k.split('.')[1]);
+          originalUpdate[k].__op === 'Increment' && k.split('.').length === 2 && k.split('.')[0] === fieldName).map(k => k.split('.')[1]);
 
         let incrementPatterns = '';
         if (keysToIncrement.length > 0) {
@@ -698,7 +710,7 @@ export default class Adapter {
 
         const keysToDelete = Object.keys(originalUpdate).filter(k =>
           // choose top level fields that have a delete operation set
-           originalUpdate[k].__op === 'Delete' && k.split('.').length === 2 && k.split('.')[0] === fieldName).map(k => k.split('.')[1]);
+          originalUpdate[k].__op === 'Delete' && k.split('.').length === 2 && k.split('.')[0] === fieldName).map(k => k.split('.')[1]);
 
         const deletePatterns = keysToDelete.reduce((p, c, i) => `'$.$${index + 1 + i}:name'`, ', ');
 
@@ -918,17 +930,18 @@ export default class Adapter {
       });
   }
 
-  performInitialization({ VolatileClassesSchemas }) {
+  async performInitialization({ VolatileClassesSchemas }) {
     debug('performInitialization');
     isInitialized = true;
+    await this._ensureSchemaCollectionExists();
     const promises = VolatileClassesSchemas.map(schema => this.connect()
-        .then(() => this.createTable(schema.className, schema))
-        .catch((err) => {
-          if (err.code === Parse.Error.INVALID_CLASS_NAME) {
-            return Promise.resolve();
-          }
-          throw err;
-        }));
+      .then(() => this.createTable(schema.className, schema))
+      .catch((err) => {
+        if (err.code === Parse.Error.INVALID_CLASS_NAME) {
+          return Promise.resolve();
+        }
+        throw err;
+      }));
     return Promise.all(promises)
       .then(() => {
         isInitialized = false;
@@ -940,6 +953,88 @@ export default class Adapter {
       });
   }
 
+  async setIndexesWithSchemaFormat(className, submittedIndexes, existingIndexes = {}, fields) {
+    if (submittedIndexes === undefined) {
+      return Promise.resolve();
+    }
+    if (Object.keys(existingIndexes).length === 0) {
+      existingIndexes = { _id_: { _id: 1 } };
+    }
+    const deletedIndexes = [];
+    const insertedIndexes = [];
+    Object.keys(submittedIndexes).forEach(name => {
+      const field = submittedIndexes[name];
+      if (existingIndexes[name] && field.__op !== 'Delete') {
+        throw new Parse.Error(Parse.Error.INVALID_QUERY, `Index ${name} exists, cannot update.`);
+      }
+      if (!existingIndexes[name] && field.__op === 'Delete') {
+        throw new Parse.Error(
+          Parse.Error.INVALID_QUERY,
+          `Index ${name} does not exist, cannot delete.`
+        );
+      }
+      if (field.__op === 'Delete') {
+        deletedIndexes.push(name);
+        delete existingIndexes[name];
+      } else {
+        Object.keys(field).forEach(key => {
+          if (!Object.prototype.hasOwnProperty.call(fields, key)) {
+            throw new Parse.Error(
+              Parse.Error.INVALID_QUERY,
+              `Field ${key} does not exist, cannot add index.`
+            );
+          }
+        });
+        existingIndexes[name] = field;
+        insertedIndexes.push({
+          key: field,
+          name,
+        });
+      }
+    });
+    if (insertedIndexes.length > 0) {
+      await this.createIndexes(className, insertedIndexes);
+    }
+    if (deletedIndexes.length > 0) {
+      await this.dropIndexes(className, deletedIndexes);
+    }
+    await this.database.query(
+      'UPDATE "_SCHEMA" SET $2:name = json_object_set_key($2:name, $3::text, $4::jsonb) WHERE "className" = $1',
+      [className, 'schema', 'indexes', JSON.stringify(existingIndexes)]
+    );
+    this._notifySchemaChange();
+  }
+
+  createIndexes(className, indexes) {
+    const promises = indexes.map(i => this.createIndexesIfNeeded(i.name, className, i.key));
+    return Promise.all(promises);
+  }
+
+  createIndexesIfNeeded(className, fieldName, type) {
+    return this.database.query('CREATE INDEX IF NOT EXISTS $1:name ON $2:name ($3:name)', [
+      fieldName,
+      className,
+      type,
+    ]);
+  }
+
+  async dropIndexes(className, indexes) {
+    // TODO
+    // const queries = indexes.map(i => ({
+    //   query: 'DROP INDEX $1:name',
+    //   values: i,
+    // }));
+    // await (conn || this._client).tx(t => t.none(this._pgp.helpers.concat(queries)));
+    return;
+  }
+
+  async getIndexes(className) {
+    // TODO:
+    // const qs = 'SELECT * FROM pg_indexes WHERE tablename = ${className}';
+    // return this._client.any(qs, { className });
+    return [];
+  }
+
   createFullTextIndex(className, field) {
     return this.connect()
       .then(() => this.database.query(`ALTER TABLE \`${className}\` ADD FULLTEXT (${field})`));
@@ -947,6 +1042,98 @@ export default class Adapter {
 
   updateSchemaWithIndexes() {
     return Promise.resolve(this);
+  }
+
+  // Used for testing purposes
+  async updateEstimatedCount(className) {
+    return this.database.query('ANALYZE TABLE $1:name', [className]);
+  }
+
+  async createTransactionalSession() {
+    // TODO
+    return Promise.resolve();
+    // return new Promise(resolve => {
+    //   const transactionalSession = {};
+    //   transactionalSession.result = this._client.tx(t => {
+    //     transactionalSession.t = t;
+    //     transactionalSession.promise = new Promise(resolve => {
+    //       transactionalSession.resolve = resolve;
+    //     });
+    //     transactionalSession.batch = [];
+    //     resolve(transactionalSession);
+    //     return transactionalSession.promise;
+    //   });
+    // });
+  }
+
+  commitTransactionalSession(transactionalSession) {
+    // TODO
+    // transactionalSession.resolve(transactionalSession.t.batch(transactionalSession.batch));
+    // return transactionalSession.result;
+    return Promise.resolve();
+  }
+
+  abortTransactionalSession(transactionalSession) {
+    // TODO
+    // const result = transactionalSession.result.catch();
+    // transactionalSession.batch.push(Promise.reject());
+    // transactionalSession.resolve(transactionalSession.t.batch(transactionalSession.batch));
+    // return result;
+    return Promise.resolve();
+  }
+
+  async ensureIndex(className, schema, fieldNames, indexName, caseInsensitive = false, options = {}) {
+    // TODO
+    // const conn = options.conn !== undefined ? options.conn : this._client;
+    // const defaultIndexName = `parse_default_${fieldNames.sort().join('_')}`;
+    // const indexNameOptions =
+    //   indexName != null ? { name: indexName } : { name: defaultIndexName };
+    // const constraintPatterns = caseInsensitive
+    //   ? fieldNames.map((fieldName, index) => `lower($${index + 3}:name) varchar_pattern_ops`)
+    //   : fieldNames.map((fieldName, index) => `$${index + 3}:name`);
+    // const qs = `CREATE INDEX IF NOT EXISTS $1:name ON $2:name (${constraintPatterns.join()})`;
+    // const setIdempotencyFunction =
+    //   options.setIdempotencyFunction !== undefined ? options.setIdempotencyFunction : false;
+    // if (setIdempotencyFunction) {
+    //   await this.ensureIdempotencyFunctionExists(options);
+    // }
+    // await conn.none(qs, [indexNameOptions.name, className, ...fieldNames]).catch(error => {
+    //   if (
+    //     error.code === PostgresDuplicateRelationError &&
+    //     error.message.includes(indexNameOptions.name)
+    //   ) {
+    //     // Index already exists. Ignore error.
+    //   } else if (
+    //     error.code === PostgresUniqueIndexViolationError &&
+    //     error.message.includes(indexNameOptions.name)
+    //   ) {
+    //     // Cast the error into the proper parse error
+    //     throw new Parse.Error(
+    //       Parse.Error.DUPLICATE_VALUE,
+    //       'A duplicate value for a field with unique values was provided'
+    //     );
+    //   } else {
+    //     throw error;
+    //   }
+    // });
+  }
+
+  async deleteIdempotencyFunction() {
+    // TODO
+    const qs = 'DROP FUNCTION IF EXISTS idempotency_delete_expired_records()';
+    return this.database.query(qs).catch(error => {
+      throw error;
+    });
+  }
+
+  async ensureIdempotencyFunctionExists(options = {}) {
+    // TODO
+    const ttlOptions = options.ttl !== undefined ? `${options.ttl} seconds` : '60 seconds';
+    const qs =
+      'CREATE OR REPLACE FUNCTION idempotency_delete_expired_records() RETURNS void LANGUAGE plpgsql AS $$ BEGIN DELETE FROM "_Idempotency" WHERE expire < NOW() - INTERVAL $1; END; $$;';
+    return this.database.query(qs, [ttlOptions]).catch(error => {
+      throw error;
+    });
   }
 }
 

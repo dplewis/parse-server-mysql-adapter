@@ -1,46 +1,29 @@
 {
-    "root": true,
-    "extends": "airbnb-base",
-    "env": {
-        "node": true,
-        "es6": true
-    },
-    "parser": "babel-eslint",
-    "plugins": [
-        "import",
-        "flowtype"
-    ],
-    "globals": {
-        "Parse": true
-    },
-    "parserOptions": {
-        "ecmaVersion": 6
-    },
-    "rules": {
-        "indent": ["error", 2],
-        "linebreak-style": ["error", "unix"],
-        "no-trailing-spaces": 2,
-        "eol-last": 2,
-        "space-in-parens": ["error", "never"],
-        "no-multiple-empty-lines": 1,
-        "prefer-const": "error",
-        "no-console":0,
-        "no-underscore-dangle":0,
-        "no-throw-literal":0,
-        "consistent-return":0,
-        "no-param-reassign":0,
-        "max-len":0,
-        "import/no-extraneous-dependencies": ["error", {
-            "devDependencies": true,
-            "optionalDependencies": true,
-            "peerDependencies": true
-        }],
-        "comma-dangle": ["error", {
-            "arrays": "always-multiline",
-            "objects": "always-multiline",
-            "imports": "always-multiline",
-            "exports": "always-multiline",
-            "functions": "ignore"
-        }]
-    }
+  "root": true,
+  "extends": "eslint:recommended",
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "parser": "@babel/eslint-parser",
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+    "requireConfigFile": false
+  },
+  "rules": {
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "linebreak-style": ["error", "unix"],
+    "no-trailing-spaces": 2,
+    "eol-last": 2,
+    "space-in-parens": ["error", "never"],
+    "no-multiple-empty-lines": 1,
+    "prefer-const": "error",
+    "space-infix-ops": "error",
+    "no-useless-escape": "off",
+    "require-atomic-updates": "off"
+  },
+  "globals": {
+    "Parse": true
+  }
 }

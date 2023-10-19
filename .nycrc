@@ -5,6 +5,7 @@
   ],
   "exclude": [
     "**/spec/**",
+    "parse-server/",
     "lib/"
   ]
 }
