@@ -76,3 +76,5 @@ lib/
 # Folder created by FileSystemAdapter
 /files
 
+# Prevent Parse-Server changes
+/parse-server

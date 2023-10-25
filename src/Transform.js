@@ -1,19 +1,19 @@
-import Parse from 'parse/node';
-import _ from 'lodash';
+const Parse = require('parse/node');
+const _ = require('lodash');
 
 const parseTypeToMySQLType = (type) => {
   switch (type.type) {
-  case 'String': return 'text';
-  case 'Date': return 'timestamp(6)';
-  case 'Object': return 'json';
-  case 'File': return 'text';
-  case 'Boolean': return 'boolean';
-  case 'Pointer': return 'char(10)';
-  case 'Number': return 'double precision';
-  case 'GeoPoint': return 'point';
-  case 'Bytes': return 'json';
-  case 'Array': return 'json';
-  default: throw `no type for ${JSON.stringify(type)} yet`;
+    case 'String': return 'text';
+    case 'Date': return 'timestamp(6)';
+    case 'Object': return 'json';
+    case 'File': return 'text';
+    case 'Boolean': return 'boolean';
+    case 'Pointer': return 'char(10)';
+    case 'Number': return 'double precision';
+    case 'GeoPoint': return 'point';
+    case 'Bytes': return 'json';
+    case 'Array': return 'json';
+    default: throw `no type for ${JSON.stringify(type)} yet`;
   }
 };
 
@@ -28,19 +28,23 @@ const ParseToMySQLComparator = {
 const emptyCLPS = Object.freeze({
   find: {},
   get: {},
+  count: {},
   create: {},
   update: {},
   delete: {},
   addField: {},
+  protectedFields: {},
 });
 
 const defaultCLPS = Object.freeze({
   find: { '*': true },
   get: { '*': true },
+  count: { '*': true },
   create: { '*': true },
   update: { '*': true },
   delete: { '*': true },
   addField: { '*': true },
+  protectedFields: { '*': [] },
 });
 
 const formatDateToMySQL = (value) => {
@@ -86,10 +90,15 @@ const toParseSchema = (schema) => {
   if (schema.classLevelPermissions) {
     clps = { ...emptyCLPS, ...schema.classLevelPermissions };
   }
+  let indexes = {};
+  if (schema.indexes) {
+    indexes = { ...schema.indexes };
+  }
   return {
     className: schema.className,
     fields: schema.fields,
     classLevelPermissions: clps,
+    indexes,
   };
 };
 
@@ -216,12 +225,12 @@ function literalizeRegexPart(s) {
   // remove all instances of \Q and \E from the remaining text & escape single quotes
   return (
     s.replace(/([^\\])(\\E)/, '$1')
-    .replace(/([^\\])(\\Q)/, '$1')
-    .replace(/^\\E/, '')
-    .replace(/^\\Q/, '')
-    .replace(/([^'])'/, '$1\'\'')
-    .replace(/^'([^'])/, '\'\'$1')
-    .replace('\\w', '[0-9a-zA-Z]')
+      .replace(/([^\\])(\\Q)/, '$1')
+      .replace(/^\\E/, '')
+      .replace(/^\\Q/, '')
+      .replace(/([^'])'/, '$1\'\'')
+      .replace(/^'([^'])/, '\'\'$1')
+      .replace('\\w', '[0-9a-zA-Z]')
   );
 }
 
@@ -251,7 +260,7 @@ const buildWhereClause = ({ schema, query, index }) => {
     const initialPatternsLength = patterns.length;
     const fieldValue = query[fieldName];
 
-    // nothingin the schema, it's gonna blow up
+    // nothing in the schema, it's gonna blow up
     if (!schema.fields[fieldName]) {
       // as it won't exist
       if (fieldValue && fieldValue.$exists === false) {
