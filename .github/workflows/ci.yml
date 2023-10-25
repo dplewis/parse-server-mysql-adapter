@@ -51,10 +51,11 @@ jobs:
       mysql:
         image: ${{ matrix.MYSQL_IMAGE }}
         env:
+          DB_HOST: localhost
           MYSQL_DATABASE: parse_server_mysql_adapter_test_database
           MYSQL_USER: root
           MYSQL_PASSWORD: 'root'
-          DB_HOST: localhost
+          MYSQL_ROOT_PASSWORD: 'root'
         ports:
           - 3306:3306
         options: >-
