@@ -48,28 +48,10 @@ jobs:
         image: redis
         ports:
           - 6379:6379
-      mysql:
-        image: ${{ matrix.MYSQL_IMAGE }}
-        env:
-          DB_HOST: localhost
-          MYSQL_DATABASE: parse_server_mysql_adapter_test_database
-          MYSQL_ROOT_PASSWORD: 'root'
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
       PARSE_SERVER_TEST_DB: mysql
-      PARSE_SERVER_TEST_DATABASE_URI: mysql://root:root@localhost:3306/parse_server_mysql_adapter_test_database
       NODE_VERSION: ${{ matrix.NODE_VERSION }}
     steps:
-      - name: Set up MySQL
-        run: |
-          sudo /etc/init.d/mysql start
-          mysql -e 'CREATE DATABASE parse_server_mysql_adapter_test_database;' -uroot -proot
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.NODE_VERSION }}
         uses: actions/setup-node@v2
@@ -84,9 +66,15 @@ jobs:
             ${{ runner.os }}-node-${{ matrix.NODE_VERSION }}-
       - name: Install dependencies
         run: npm ci
-      - run: |
-          npm run test:init
-          npm run coverage
+      - name: Set up MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE parse_server_mysql_adapter_test_database;' -uroot -proot
+          mysql -e 'SHOW DATABASES;' -uroot -proot
+      - name: Initialize tests
+        run: npm run test:init
+      - name: Coverage
+        run: npm run coverage
         env:
           CI: true
       - run: bash <(curl -s https://codecov.io/bash)
