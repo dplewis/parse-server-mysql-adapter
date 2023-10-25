@@ -8,15 +8,16 @@
     "type": "git",
     "url": "git+https://github.com/dplewis/parse-server-mysql-adapter.git"
   },
-  "main": "lib/Adapter.js",
-  "files": [
-    "lib/"
-  ],
+  "main": "lib/index.js",
+  "files": ["lib/"],
   "scripts": {
     "build": "babel src/ -d lib/ --copy-files",
     "watch": "babel --watch src/ -d lib/ --copy-files",
     "lint": "eslint --cache ./src",
-    "lint:fix": "eslint --fix ./src"
+    "lint:fix": "eslint --fix ./src",
+    "coverage": "./scripts/coverage.sh",
+    "testonly": "./scripts/testonly.sh",
+    "test:init": "./scripts/init-test.sh"
   },
   "dependencies": {
     "lodash": "4.17.21",

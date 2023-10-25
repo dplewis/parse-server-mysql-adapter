@@ -1,17 +1,96 @@
 name: ci
 on:
   push:
-    branches: [ master ]
+    branches: [ master' ]
   pull_request:
     branches:
       - '**'
+env:
+  PARSE_SERVER_TEST_TIMEOUT: 20000
+  PARSE_SERVER_TEST_CACHE: redis
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  check-lint:
+     name: Lint
+     timeout-minutes: 15
+     runs-on: ubuntu-22.04
+     steps:
+       - uses: actions/checkout@v2
+       - name: Use Node.js ${{ matrix.NODE_VERSION }}
+         uses: actions/setup-node@v2
+         with:
+           node-version: ${{ matrix.node-version }}
+       - name: Cache Node.js modules
+         uses: actions/cache@v2
+         with:
+           path: ~/.npm
+           key: ${{ runner.os }}-node-${{ matrix.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+           restore-keys: |
+             ${{ runner.os }}-node-${{ matrix.NODE_VERSION }}-
+       - name: Install dependencies
+         run: npm ci
+       - run: npm run lint
+  check-mysql:
+    strategy:
+      matrix:
+        include:
+          - name: MySQL 8.0.34
+            MYSQL_IMAGE: mysql:8.0.34
+            NODE_VERSION: 18.16.0
+          - name: MySQL 8.1.0
+            MYSQL_IMAGE: mysql:8.1.0
+            NODE_VERSION: 18.16.0
+      fail-fast: false
+    name: ${{ matrix.name }}
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    services:
+      redis:
+        image: redis
+        ports:
+          - 6379:6379
+      mysql:
+        image: ${{ matrix.MYSQL_IMAGE }}
+        env:
+          MYSQL_DATABASE: parse_server_mysql_adapter_test_database
+          MYSQL_USER: root
+          MYSQL_PASSWORD: 'root'
+          DB_HOST: localhost
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PARSE_SERVER_TEST_DB: mysql
+      PARSE_SERVER_TEST_DATABASE_URI: mysql://root:root@localhost:3306/parse_server_mysql_adapter_test_database
+      NODE_VERSION: ${{ matrix.NODE_VERSION }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Set up MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE parse_server_mysql_adapter_test_database;' -uroot -proot
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.NODE_VERSION }}
+        uses: actions/setup-node@v2
         with:
-          node-version: 16
-      - run: npm ci
-      - run: npm test
+          node-version: ${{ matrix.NODE_VERSION }}
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ matrix.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.NODE_VERSION }}-
+      - name: Install dependencies
+        run: npm ci
+      - run: |
+          npm run test:init
+          npm run coverage
+        env:
+          CI: true
+      - run: bash <(curl -s https://codecov.io/bash)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

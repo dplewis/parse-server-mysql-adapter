@@ -9,7 +9,6 @@ const SchemaCache = require('../lib/Adapters/Cache/SchemaCache').default;
 if (dns.setDefaultResultOrder) {
   dns.setDefaultResultOrder('ipv4first');
 }
-// Diamond was here
 // Sets up a Parse API server for testing.
 jasmine.DEFAULT_TIMEOUT_INTERVAL = process.env.PARSE_SERVER_TEST_TIMEOUT || 10000;
 jasmine.getEnv().addReporter(new CurrentSpecReporter());
@@ -43,7 +42,7 @@ const FSAdapter = require('@parse/fs-files-adapter');
 const PostgresStorageAdapter = require('../lib/Adapters/Storage/Postgres/PostgresStorageAdapter')
   .default;
 const MongoStorageAdapter = require('../lib/Adapters/Storage/Mongo/MongoStorageAdapter').default;
-const MySQLStorageAdapter = require('../../src/Adapter.js');
+const MySQLStorageAdapter = require('../../src/index.js');
 const RedisCacheAdapter = require('../lib/Adapters/Cache/RedisCacheAdapter').default;
 const RESTController = require('parse/lib/node/RESTController');
 const { VolatileClassesSchemas } = require('../lib/Controllers/SchemaController');
