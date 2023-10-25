@@ -50,7 +50,7 @@ jobs:
           - 6379:6379
     env:
       PARSE_SERVER_TEST_DB: mysql
-      NODE_VERSION: ${{ matrix.NODE_VERSION }}
+      PARSE_SERVER_TEST_DATABASE_URI: mysql://root:root@localhost:3306/parse_server_mysql_adapter_test_database
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.NODE_VERSION }}
