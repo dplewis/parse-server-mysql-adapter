@@ -21,7 +21,7 @@ mysql> CREATE DATABASE `database_here`
 
 ```
 const uri = 'mysql://root@localhost:3306/database_here';
-const MySQL = require('parse-server-mysql-adapter').MySQL;
+const { MySQL } = require('parse-server-mysql-adapter');
 const mysql = new MySQL(uri);
 
 var api = new ParseServer({
